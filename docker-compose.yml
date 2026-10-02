@@ -1,0 +1,28 @@
+services:
+  convsync:
+    image: ${IMAGE:-frugan/convsync:latest}
+    # `image` is both the pull reference and the build tag for the section
+    # below, so a local build has to be tagged the way it will be run:
+    # `IMAGE=convsync:local docker compose build`, then
+    # `IMAGE=convsync:local docker compose run --rm convsync`.
+    # Building with IMAGE unset overwrites the published tag in the local
+    # cache, and nothing will pull it again until that tag is removed.
+    build:
+      context: .
+    # The default, stated explicitly because the build section above makes it
+    # ambiguous: the image is pulled when it is not already in the local
+    # cache, and this context is only built if it cannot be obtained.
+    pull_policy: missing
+    # Default is uid 0. With a daemon configured for userns-remap, container
+    # UID 0 maps to the host user per /etc/subuid, which is what makes ./data
+    # writable from the host. Without userns-remap, set
+    # DOCKER_USER=$(id -u):$(id -g) in .env instead, or every file written to
+    # ./data will be owned by root.
+    user: ${DOCKER_USER:-0:0}
+    # OCR and conversion are fully local: the documents (invoices, tax
+    # returns, contracts) never need to leave the machine.
+    network_mode: none
+    environment:
+      OCR_LANGS: ${OCR_LANGS:-ita+eng}
+    volumes:
+      - ./data:/data

@@ -1,0 +1,38 @@
+# Environment
+.env*
+!.env.dist
+
+# Documents
+data
+
+# Repo
+.git
+.github
+.megalinter.yml
+.markdownlint.yml
+ruff.toml
+.releaserc.json
+commitlint.config.mjs
+docker-compose.yml
+LICENSE
+README.md
+*.code-workspace
+
+# Python
+.ctxsync*
+.claude*
+venv/
+__pycache__/
+*.pyc
+
+# Linter
+megalinter-reports/
+*.cache
+.ruff_cache/
+core.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

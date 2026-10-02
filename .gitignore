@@ -1,0 +1,25 @@
+# Environment
+.env*
+!.env.dist
+
+# Repo
+*.code-workspace
+
+# Python
+.ctxsync*
+.claude*
+venv/
+__pycache__/
+*.pyc
+
+# Linter
+megalinter-reports/
+*.cache
+core.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.ruff_cache/

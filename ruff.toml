@@ -1,0 +1,7 @@
+# Read by ruff both in ci.yml and in MegaLinter, so the two cannot disagree.
+# The target matches the Python 3 of the base image (Debian trixie).
+target-version = "py313"
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]

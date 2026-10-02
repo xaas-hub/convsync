@@ -1,0 +1,11 @@
+# Picked up automatically by markdownlint under MegaLinter.
+default: true
+
+# The README wraps prose at 79 columns but its tables and links exceed it.
+MD013: false
+
+# Inline HTML is used on purpose: <img> for the sponsor button.
+MD033: false
+
+# The first line is the badge block, not a heading.
+MD041: false

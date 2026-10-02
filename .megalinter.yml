@@ -1,0 +1,37 @@
+# Local use:
+#
+#   docker run --rm -v $(pwd):/tmp/lint oxsecurity/megalinter --fix
+#
+# The set of linters mirrors what ci.yml enforces (hadolint, shellcheck, ruff), plus
+# the checks that are impractical to run there. Deliberately no extra arguments
+# for hadolint and shellcheck: any divergence from ci.yml would mean the local
+# run and the pipeline disagree.
+APPLY_FIXES: all
+SHOW_ELAPSED_TIME: true
+FLAVOR_SUGGESTIONS: false
+PRINT_ALPACA: false
+DEFAULT_BRANCH: main
+
+# Explicit allow-list: only these run, nothing else is auto-detected.
+ENABLE_LINTERS:
+  - BASH_SHELLCHECK
+  - DOCKERFILE_HADOLINT
+  - PYTHON_RUFF
+  - MARKDOWN_MARKDOWNLINT
+  - YAML_YAMLLINT
+  - JSON_JSONLINT
+  - REPOSITORY_SECRETLINT
+
+# The entry point has no extension, so the .sh matching of the BASH descriptor
+# misses it. Matching it by name is safer than adding "" to the extension
+# list, which would also feed LICENSE to shellcheck.
+BASH_SHELLCHECK_FILE_NAMES_REGEX:
+  - "convsync"
+
+# data/ holds the documents and their Markdown: not source, and possibly
+# confidential, yet bind-mounted into the linter container by the command above.
+EXCLUDED_DIRECTORIES:
+  - .git
+  - data
+  - venv
+  - megalinter-reports

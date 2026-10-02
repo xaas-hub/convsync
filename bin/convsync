@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Entry point of the image.
+#
+#   convsync [sync] [--force]   OCR the scanned PDFs, then convert everything
+#   convsync ocr [--force]      only add the text layer to scanned PDFs
+#   convsync convert [--force]  only convert to Markdown
+#   convsync <command> [args]   run anything else (e.g. bash)
+#
+# The tree to process is $CONVSYNC_ROOT, /data by default.
+
+set -euo pipefail
+
+LIB=/opt/convsync
+
+usage() {
+	sed -n '3,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+}
+
+cmd="${1:-sync}"
+case "$cmd" in
+help | -h | --help)
+	usage
+	exit 0
+	;;
+esac
+# A bare option means the default command with that option.
+case "$cmd" in
+-*) cmd=sync ;;
+*) [ $# -gt 0 ] && shift ;;
+esac
+
+case "$cmd" in
+sync)
+	# A failed OCR must not hold back the conversion of everything else: the
+	# affected scans just come out EMPTY. The exit code still reports it.
+	status=0
+	"$LIB/ocr.sh" "$@" || status=$?
+	python3 "$LIB/convert.py" "$@" || status=$?
+	exit "$status"
+	;;
+ocr) exec "$LIB/ocr.sh" "$@" ;;
+convert) exec python3 "$LIB/convert.py" "$@" ;;
+*) exec "$cmd" "$@" ;;
+esac
