@@ -175,7 +175,7 @@ CPUs. The table reflects the state of each project at the time of writing:
 check upstream before relying on it.
 
 | Tool | OCR for scans | ML runtime | CPU without AVX2 | Folder sync | Formats |
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|
 | **ConvSync** | yes, Tesseract, local | none | yes | **yes**: incremental, orphans, hand-edit guard | PDF, XLSX |
 | [MarkItDown](https://github.com/microsoft/markitdown) | via plugins or LLM | onnxruntime (`magika`, core dependency) | no, SIGILL | no | many |
 | [Docling](https://github.com/docling-project/docling) | yes | torch / onnxruntime | not guaranteed | no | many |
