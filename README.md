@@ -174,16 +174,16 @@ folder in sync, and the AI-based ones carry a runtime that rules out older
 CPUs. The table reflects the state of each project at the time of writing:
 check upstream before relying on it.
 
-| Tool | Runs locally | OCR for scans | ML runtime | CPU without AVX2 | Folder sync | Formats |
+| Tool | OCR for scans | ML runtime | CPU without AVX2 | Folder sync | Formats |
 |---|---|---|---|---|---|---|
-| **ConvSync** | yes | yes, Tesseract, local | none | yes | **yes**: incremental, orphans, hand-edit guard | PDF, XLSX |
-| [MarkItDown](https://github.com/microsoft/markitdown) | yes | via plugins or LLM | onnxruntime (`magika`, core dependency) | no, SIGILL | no | many |
-| [Docling](https://github.com/docling-project/docling) | yes | yes | torch / onnxruntime | not guaranteed | no | many |
-| [Marker](https://github.com/datalab-to/marker) | yes | yes | torch | not guaranteed | no | many |
-| [MinerU](https://github.com/opendatalab/MinerU) | yes | yes | torch, VLM models | not guaranteed | no | many |
-| [PyMuPDF4LLM](https://github.com/pymupdf/pymupdf4llm) | yes | yes, Tesseract | onnxruntime + numpy (PyMuPDF Layout, installed by default) | not guaranteed | no | PDF and MuPDF formats |
-| [Anydoc](https://github.com/firecrawl/anydoc) | yes | **hosted only** (Firecrawl Parse) | none | likely, untested | no | Office, ODF, RTF, EPUB, CSV, PDF |
-| [Pandoc](https://pandoc.org) | yes | no | none | yes | no | many, but **no PDF or XLSX input** |
+| **ConvSync** | yes, Tesseract, local | none | yes | **yes**: incremental, orphans, hand-edit guard | PDF, XLSX |
+| [MarkItDown](https://github.com/microsoft/markitdown) | via plugins or LLM | onnxruntime (`magika`, core dependency) | no, SIGILL | no | many |
+| [Docling](https://github.com/docling-project/docling) | yes | torch / onnxruntime | not guaranteed | no | many |
+| [Marker](https://github.com/datalab-to/marker) | yes | torch | not guaranteed | no | many |
+| [MinerU](https://github.com/opendatalab/MinerU) | yes | torch, VLM models | not guaranteed | no | many |
+| [PyMuPDF4LLM](https://github.com/pymupdf/pymupdf4llm) | yes, Tesseract | onnxruntime + numpy (PyMuPDF Layout, installed by default) | not guaranteed | no | PDF and MuPDF formats |
+| [Anydoc](https://github.com/firecrawl/anydoc) | **hosted only** (Firecrawl Parse) | none | likely, untested | no | Office, ODF, RTF, EPUB, CSV, PDF |
+| [Pandoc](https://pandoc.org) | no | none | yes | no | many, but **no PDF or XLSX input** |
 
 When to pick something else:
 
