@@ -46,7 +46,7 @@ jobs:
             @semantic-release/changelog@latest
             @semantic-release/git@latest
             @semantic-release/github@latest
-            conventional-changelog-conventionalcommits@latest
+            conventional-changelog-conventionalcommits@9
         env:
           # Use the token with bypass permissions
           GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
