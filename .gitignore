@@ -4,6 +4,8 @@
 
 # Repo
 *.code-workspace
+# Maintainer's private notes for agents, kept in a separate repository
+agents/
 
 # Python
 .ctxsync*

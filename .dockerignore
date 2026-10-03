@@ -16,6 +16,8 @@ commitlint.config.mjs
 docker-compose.yml
 LICENSE
 README.md
+AGENTS.md
+agents
 *.code-workspace
 
 # Python
