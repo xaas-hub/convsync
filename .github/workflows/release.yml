@@ -23,12 +23,19 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
 
     steps:
+      - name: Generate a GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # Use a personal access token or GitHub App token with bypass permissions
-          token: ${{ secrets.SEMANTIC_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           persist-credentials: false
 
       - name: Setup Node.js
@@ -49,7 +56,7 @@ jobs:
             conventional-changelog-conventionalcommits@9
         env:
           # Use the token with bypass permissions
-          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
