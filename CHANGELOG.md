@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3](https://github.com/xaas-hub/convsync/compare/v0.1.2...v0.1.3) (2026-10-03)
+
+### Bug Fixes
+
+* **ocr:** add full-page raster check ([e97b487](https://github.com/xaas-hub/convsync/commit/e97b487dd631a3bfcbb188b175082afa35275e29))
+* **ocr:** use adaptive Otsu thresholding for text on dark or colored backgrounds ([f773111](https://github.com/xaas-hub/convsync/commit/f773111fa944a5caa197ef7b589c32604f3b0582))
+
+### Documentation
+
+* add AGENTS.md for AI agents ([d8af3a5](https://github.com/xaas-hub/convsync/commit/d8af3a5617665b02172fab02555c4c9a3d1fafa1))
+
 ## [0.1.2](https://github.com/xaas-hub/convsync/compare/v0.1.1...v0.1.2) (2026-10-02)
 
 ### Dependencies
