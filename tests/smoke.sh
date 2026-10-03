@@ -84,6 +84,22 @@ rm -f form.ps form.png form-body.pdf
 [ "$(pdftotext -q 2026/form.pdf - | tr -d '[:space:]' | wc -c)" -ge 100 ] ||
 	fail "form fixture does not clear MIN_CHARS"
 
+# Poster: low-contrast text on a light band, below a black block. A single
+# page-wide Otsu threshold lands between the black and the white and turns
+# both the band and its text white; only a local threshold recovers it.
+cat >poster.ps <<'PS'
+0 setgray 0 400 612 392 rectfill
+0.8 setgray 0 200 612 120 rectfill
+0.55 setgray
+/Helvetica-Bold findfont 28 scalefont setfont
+72 270 moveto (Spettacolo numero 5190) show
+72 230 moveto (Ingresso ad offerta libera) show
+showpage
+PS
+gs -q -dBATCH -dNOPAUSE -sDEVICE=pnggray -r300 -o poster.png poster.ps
+img2pdf --output 2026/poster.pdf poster.png
+rm -f poster.ps poster.png
+
 # Spreadsheet.
 python3 - <<'PY'
 from openpyxl import Workbook
@@ -105,9 +121,13 @@ grep -q "Fattura numero 4417" _md/2026/native.pdf.md || fail "native PDF not ext
 grep -q "4417" _md/2026/scan.pdf.md || fail "OCR text missing from the scan"
 grep -q "(ocr)" _md/2026/scan.pdf.md || fail "OCR provenance missing from the stamp"
 grep -q "| Notebook | 1200 |" _md/2026/cespiti.xlsx.md || fail "XLSX table missing"
+[ -f _ocr/2026/form.ocr.pdf ] || fail "flattened form not OCRed"
+# 8823 is only in the raster: the fields alone would not produce it.
+grep -q "8823" _md/2026/form.pdf.md || fail "OCR text missing from the flattened form"
+grep -q "5190" _md/2026/poster.pdf.md || fail "OCR text missing from the low-contrast poster"
 
 # Second run: nothing to do.
-convsync | grep -q "converted: 0 | skipped: 3" || fail "rebuild was not incremental"
+convsync | grep -q "converted: 0 | skipped: 5" || fail "rebuild was not incremental"
 
 # A hand edit survives the next forced rebuild as a .new conflict file.
 echo "hand edit" >>_md/2026/native.pdf.md

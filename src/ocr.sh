@@ -92,6 +92,9 @@ while IFS= read -r -d '' f; do
 	# --force-ocr: scanners wrap the image in a tagged PDF, which ocrmypdf
 	# refuses to touch otherwise. There is no text layer to lose here.
 	# --output-type pdfa: PDF/A-2b, the archival format for tax documents.
+	# --tesseract-thresholding adaptive-otsu: the default global Otsu picks one
+	# threshold for the whole page, which on posters and photos (text on dark
+	# or colored bands) wipes out most of the text. Clean scans come out the same.
 	if ! "$BIN" \
 		-l "$LANGS" \
 		--output-type pdfa \
@@ -99,6 +102,7 @@ while IFS= read -r -d '' f; do
 		--rotate-pages \
 		--deskew \
 		--clean \
+		--tesseract-thresholding adaptive-otsu \
 		--optimize 1 \
 		--quiet \
 		"$f" "$dst"; then
