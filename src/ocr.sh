@@ -37,6 +37,19 @@ BIN="$(command -v ocrmypdf || true)"
 FORCE=0
 [ "${1:-}" = "--force" ] && FORCE=1
 
+# A flattened scan (a filled-in form printed back to PDF, say) keeps a text
+# layer for the field values only, which can clear MIN_CHARS. What gives it
+# away is that every page is a full-page raster.
+full_raster() {
+	local pages width
+	read -r pages width < <(pdfinfo "$1" 2>/dev/null |
+		awk '/^Pages:/ {p = $2} /^Page size:/ {w = $3} END {print p + 0, w + 0}')
+	[ "$pages" -gt 0 ] || return 1
+	pdfimages -list "$1" 2>/dev/null | awk -v w="$width" -v n="$pages" '
+		NR > 2 && $3 == "image" && $13 > 0 && $4 * 72 / $13 >= 0.9 * w { if (!seen[$1]++) c++ }
+		END { exit !(c == n) }'
+}
+
 cd "$ROOT"
 
 ocred=0
@@ -69,7 +82,7 @@ while IFS= read -r -d '' f; do
 	# Leave born digital PDFs alone: convert.py already extracts them, and
 	# rasterizing them would only degrade the text.
 	chars=$(pdftotext -q "$f" - 2>/dev/null | tr -d '[:space:]' | wc -c)
-	if [ "$chars" -ge "$MIN_CHARS" ]; then
+	if [ "$chars" -ge "$MIN_CHARS" ] && ! full_raster "$f"; then
 		native=$((native + 1))
 		continue
 	fi

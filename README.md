@@ -121,8 +121,10 @@ converted: 2 | skipped: 41 | removed: 1 | conflicts: 0 | failed: 0
 
 **OCR only where it is needed.** A PDF that yields fewer than 100 characters of
 text is treated as an image-only scan and goes through ocrmypdf into
-`_ocr/<path>.ocr.pdf`. Born digital PDFs are left alone: rasterizing them would
-only degrade the text. Originals are never modified.
+`_ocr/<path>.ocr.pdf`. So is a PDF whose every page is a full-page image, such
+as a filled-in form flattened back to PDF, whose text layer holds only the
+field values. Born digital PDFs are left alone: rasterizing them would only
+degrade the text. Originals are never modified.
 
 **Mirrored output.** `_md/` reproduces the source tree, keeping the original
 extension in the name, so `report.pdf` and `report.xlsx` in the same folder do
@@ -217,8 +219,9 @@ docker run --rm --network none --entrypoint /opt/convsync/tests/smoke.sh convsyn
 ## Limitations
 
 - Only PDF and XLSX are converted; other files are ignored.
-- A PDF with a little text and many scanned pages (a typed cover on a scanned
-  body) clears the 100-character threshold and is not OCRed.
+- A PDF that mixes born digital and scanned pages (a typed cover on a scanned
+  body) clears the 100-character threshold and is not OCRed: only PDFs scanned
+  on every page are caught regardless of their text.
 - XLSX formulas never computed by a spreadsheet application (files written by
   scripts) have no cached value and come out empty.
 - OCR quality is Tesseract's: fine on clean scans, poor on photos and

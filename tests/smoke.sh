@@ -46,6 +46,44 @@ gs -q -dBATCH -dNOPAUSE -sDEVICE=pnggray -r300 -o page.png 2026/native.pdf
 img2pdf --output 2026/scan.pdf page.png
 rm -f page.ps page.png
 
+# Flattened form: a scanned body under a text layer that holds only the
+# filled-in fields, long enough to clear MIN_CHARS. Only the full-page raster
+# check in ocr.sh tells it apart from a born digital PDF.
+cat >form.ps <<'PS'
+/Helvetica findfont 24 scalefont setfont
+72 700 moveto (Convenzione numero 8823 del 2026) show
+72 660 moveto (Licenza d'uso del software gestionale) show
+showpage
+PS
+gs -q -dBATCH -dNOPAUSE -sDEVICE=pnggray -r300 -o form.png form.ps
+img2pdf --output form-body.pdf form.png
+python3 - <<'PY'
+import pikepdf
+from pikepdf import Dictionary, Name
+
+with pikepdf.open("form-body.pdf") as pdf:
+    page = pdf.pages[0]
+    page.add_resource(
+        Dictionary(Type=Name.Font, Subtype=Name.Type1, BaseFont=Name.Helvetica),
+        Name.Font,
+        Name.F1,
+    )
+    page.contents_add(
+        pikepdf.Stream(
+            pdf,
+            b"BT /F1 12 Tf 72 400 Td"
+            b" (Ragione sociale Esempio Srl, Via Verdi 7, 00100 Roma) Tj"
+            b" 0 -20 Td (Codice fiscale 01234567890, PEC esempio@pec.example) Tj"
+            b" 0 -20 Td (Legale rappresentante Mario Bianchi, data 30/09/2026) Tj ET",
+        )
+    )
+    pdf.save("2026/form.pdf")
+PY
+rm -f form.ps form.png form-body.pdf
+# Without this the fixture would pass as a plain scan and prove nothing.
+[ "$(pdftotext -q 2026/form.pdf - | tr -d '[:space:]' | wc -c)" -ge 100 ] ||
+	fail "form fixture does not clear MIN_CHARS"
+
 # Spreadsheet.
 python3 - <<'PY'
 from openpyxl import Workbook
