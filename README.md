@@ -259,7 +259,7 @@ See [CONTRIBUTING](.github/CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-(ɔ) Copyleft 2026 [Frugan](https://frugan.it).
+Copyright (c) 2026 [Frugan](https://frugan.it).
 [MIT](https://choosealicense.com/licenses/mit/), see the [LICENSE](LICENSE) file.
 
 The bundled tools keep their own licenses: notably ocrmypdf (MPL-2.0),
