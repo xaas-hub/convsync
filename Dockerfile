@@ -22,7 +22,7 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.source="https://github.com/xaas-hub/convsync" \
       org.opencontainers.image.title="convsync" \
-      org.opencontainers.image.description="Incremental PDF/XLSX to Markdown sync with local OCR, no ML runtime, no AVX2" \
+      org.opencontainers.image.description="Incremental document to Markdown sync with local OCR, no ML runtime, no AVX2" \
       org.opencontainers.image.licenses="MIT"
 
 ENV DEBIAN_FRONTEND=noninteractive \

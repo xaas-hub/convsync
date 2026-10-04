@@ -140,5 +140,5 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.IMAGE_NAME }}
-          short-description: "Incremental PDF/XLSX to Markdown sync with local OCR, no AVX2 required"
+          short-description: "Incremental document to Markdown sync with local OCR, no AVX2 required"
           readme-filepath: ./README.md
