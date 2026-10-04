@@ -20,6 +20,19 @@ jobs:
     if: github.actor == 'dependabot[bot]'
 
     steps:
+      # Merges performed through GITHUB_TOKEN do not start new workflow runs, so
+      # the squash commit would land on main without triggering release.yml and
+      # ci.yml: the deps patch release and the rebuilt image would wait for the
+      # next push. The app token makes the merge an app event, which does.
+      # Runs started by Dependabot only see Dependabot secrets, so the private
+      # key has to be stored there as well.
+      - name: Generate a GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Fetch Dependabot metadata
         id: meta
         uses: dependabot/fetch-metadata@v3
@@ -40,7 +53,7 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Flag major updates for manual review
         if: steps.meta.outputs.update-type == 'version-update:semver-major'
