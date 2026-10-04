@@ -6,10 +6,11 @@
 
 # ConvSync
 
-Keeps a folder of **PDF and XLSX documents mirrored as Markdown**, so that LLM
-agents and RAG tooling can read them. Scanned PDFs get a text layer through
-**local OCR** first. Runs incrementally, cleans up after deleted documents and
-never overwrites a Markdown file you edited by hand.
+Keeps a folder of **documents mirrored as Markdown**, so that LLM agents and
+RAG tooling can read them. Scanned documents get a text layer through **local
+OCR** first. Runs incrementally, cleans up after deleted documents and never
+overwrites a Markdown file you edited by hand. See the
+[supported formats](#supported-formats).
 
 **No machine learning runtime inside** — no numpy, no onnxruntime, no torch —
 so it runs on **x86-64 CPUs without AVX2**, where markitdown, docling and most
@@ -40,6 +41,17 @@ documents/                         documents/_md/
 Tesseract selects its SIMD code path at runtime and falls back to SSE on CPUs
 without AVX2. Every CI build fails if numpy, onnxruntime, torch or magika end
 up installed.
+
+## Supported formats
+
+| Extension | Conversion |
+|---|---|
+| `.pdf` | text layer via `pdftotext -layout`; image-only scans are OCRed first |
+| `.xlsx` | one Markdown table per sheet, with the cached values |
+
+Every other file is ignored. Plain text formats (CSV, TXT, JSON, HTML) need no
+conversion: agents read them as they are. More formats are tracked in
+[#5](https://github.com/xaas-hub/convsync/issues/5).
 
 ## Available tags
 
