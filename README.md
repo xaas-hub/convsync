@@ -92,7 +92,7 @@ docker run --rm --network none --user "$(id -u):$(id -g)" \
 ### Inside a Compose stack
 
 The typical setup: the documents live in a gitignored folder of the project,
-and the agents read the Markdown next to them.
+and the agents get only the Markdown.
 
 ```yaml
 services:
@@ -101,12 +101,17 @@ services:
     profiles: ["tools"]        # never started by `docker compose up`
     network_mode: none
     volumes:
-      - ./agents/sources:/data
+      - ./agents/data:/data
 ```
 
 ```bash
 docker compose run --rm convsync
 ```
+
+Mount only `_md/` into the containers the agents run in, read-only
+(`./agents/data/_md`, with `:ro`): the originals and the OCR copies in `_ocr/`
+then stay out of their reach. An agent running directly on the host can read
+the whole folder regardless.
 
 ## Commands
 
