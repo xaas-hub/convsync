@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5](https://github.com/xaas-hub/convsync/compare/v0.1.4...v0.1.5) (2026-10-05)
+
+### Dependencies
+
+* **deps:** bump actions/create-github-app-token from 2 to 3 ([#7](https://github.com/xaas-hub/convsync/issues/7)) ([c8d3dca](https://github.com/xaas-hub/convsync/commit/c8d3dca59da80e74e4d1e3f632a429ebb8d7509a))
+
+### Documentation
+
+* keep LICENSE as the canonical MIT text ([bf44b08](https://github.com/xaas-hub/convsync/commit/bf44b085e5d7b3a2cc1bbe65a5527285eda96d74))
+* replace copyleft notice with copyright ([a21c104](https://github.com/xaas-hub/convsync/commit/a21c104e37bfc1b06e8594391f81e5ee69266c7a))
+
 ## [0.1.4](https://github.com/xaas-hub/convsync/compare/v0.1.3...v0.1.4) (2026-10-04)
 
 ### Documentation
