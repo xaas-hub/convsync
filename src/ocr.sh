@@ -82,15 +82,23 @@ while IFS= read -r -d '' f; do
 	# Leave born digital PDFs alone: convert.py already extracts them, and
 	# rasterizing them would only degrade the text.
 	chars=$(pdftotext -q "$f" - 2>/dev/null | tr -d '[:space:]' | wc -c)
-	if [ "$chars" -ge "$MIN_CHARS" ] && ! full_raster "$f"; then
-		native=$((native + 1))
-		continue
+	# --force-ocr: scanners wrap the image in a tagged PDF, which ocrmypdf
+	# refuses to touch otherwise. There is no text layer to lose here.
+	mode=(--force-ocr --deskew)
+	if [ "$chars" -ge "$MIN_CHARS" ]; then
+		if ! full_raster "$f"; then
+			native=$((native + 1))
+			continue
+		fi
+		# A flattened form: --redo-ocr keeps the visible field values as they
+		# are and OCRs only the raster around them, where --force-ocr would
+		# rasterize them and read them back. It rejects --deskew; a tagged PDF
+		# only raises a warning in this mode.
+		mode=(--redo-ocr)
 	fi
 
 	mkdir -p "$(dirname "$dst")"
 
-	# --force-ocr: scanners wrap the image in a tagged PDF, which ocrmypdf
-	# refuses to touch otherwise. There is no text layer to lose here.
 	# --output-type pdfa: PDF/A-2b, the archival format for tax documents.
 	# --tesseract-thresholding adaptive-otsu: the default global Otsu picks one
 	# threshold for the whole page, which on posters and photos (text on dark
@@ -98,9 +106,8 @@ while IFS= read -r -d '' f; do
 	if ! "$BIN" \
 		-l "$LANGS" \
 		--output-type pdfa \
-		--force-ocr \
+		"${mode[@]}" \
 		--rotate-pages \
-		--deskew \
 		--clean \
 		--tesseract-thresholding adaptive-otsu \
 		--optimize 1 \

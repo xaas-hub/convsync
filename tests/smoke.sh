@@ -124,6 +124,9 @@ grep -q "| Notebook | 1200 |" _md/2026/cespiti.xlsx.md || fail "XLSX table missi
 [ -f _ocr/2026/form.ocr.pdf ] || fail "flattened form not OCRed"
 # 8823 is only in the raster: the fields alone would not produce it.
 grep -q "8823" _md/2026/form.pdf.md || fail "OCR text missing from the flattened form"
+# The field values must survive as text, not be rasterized and OCRed back.
+pdffonts _ocr/2026/form.ocr.pdf | awk 'NR > 2' | grep -qv GlyphLessFont ||
+	fail "flattened form lost its native text layer"
 grep -q "5190" _md/2026/poster.pdf.md || fail "OCR text missing from the low-contrast poster"
 
 # Second run: nothing to do.
