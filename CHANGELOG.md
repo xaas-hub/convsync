@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7](https://github.com/xaas-hub/convsync/compare/v0.1.6...v0.1.7) (2026-10-19)
+
+### Dependencies
+
+* **deps:** bump cycjimmy/semantic-release-action from 6 to 8 ([#8](https://github.com/xaas-hub/convsync/issues/8)) ([a02f4a1](https://github.com/xaas-hub/convsync/commit/a02f4a19d3f69376eddfbb138d1db6fa46af0d35))
+
 ## [0.1.6](https://github.com/xaas-hub/convsync/compare/v0.1.5...v0.1.6) (2026-10-14)
 
 ### Bug Fixes
