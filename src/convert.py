@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Convert files that LLM tooling cannot read as they are (PDF, XLSX) into Markdown
-under _md/.
+Convert files that LLM tooling cannot read as they are (PDF, XLSX, DOCX, ODT) into
+Markdown under _md/.
 
 markitdown is not used here: its core dependency `magika` pulls in `onnxruntime`,
 whose prebuilt wheels are compiled with AVX2 and abort with SIGILL on CPUs without
-it. pdftotext (poppler) and openpyxl need no such runtime.
+it. pdftotext (poppler), openpyxl, python-docx and odfdo need no such runtime.
 
 The tree to convert is $CONVSYNC_ROOT (default /data, the volume of the image).
 
@@ -19,6 +19,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+import docx
+import odfdo
+from docx.table import Table
 from openpyxl import load_workbook
 
 ROOT = Path(os.environ.get("CONVSYNC_ROOT", "/data")).resolve()
@@ -70,6 +73,22 @@ def pdf_to_markdown(src: Path) -> str:
     return f"```\n{text}\n```" if text else ""
 
 
+def markdown_table(rows: list[list[str]]) -> list[str]:
+    """Lines of a Markdown table from escaped cell text; the first row is the header."""
+    rows = [row for row in rows if any(row)]
+    if not rows:
+        return []
+
+    width = max(len(row) for row in rows)
+    rows = [row + [""] * (width - len(row)) for row in rows]
+
+    return [
+        "| " + " | ".join(rows[0]) + " |",
+        "|" + "---|" * width,
+        *("| " + " | ".join(row) + " |" for row in rows[1:]),
+    ]
+
+
 def xlsx_to_markdown(src: Path) -> str:
     # data_only=True returns the values cached by Excel/LibreOffice, not formulas.
     workbook = load_workbook(src, data_only=True, read_only=True)
@@ -80,25 +99,70 @@ def xlsx_to_markdown(src: Path) -> str:
             ["" if cell is None else str(cell).strip().replace("|", "\\|") for cell in row]
             for row in sheet.iter_rows(values_only=True)
         ]
-        rows = [row for row in rows if any(row)]
-        if not rows:
+        table = markdown_table(rows)
+        if not table:
             continue
-
-        width = max(len(row) for row in rows)
-        rows = [row + [""] * (width - len(row)) for row in rows]
 
         chunks.append(f"## {sheet.title}")
         chunks.append("")
-        chunks.append("| " + " | ".join(rows[0]) + " |")
-        chunks.append("|" + "---|" * width)
-        chunks.extend("| " + " | ".join(row) + " |" for row in rows[1:])
+        chunks.extend(table)
         chunks.append("")
 
     workbook.close()
     return "\n".join(chunks).strip()
 
 
-CONVERTERS = {".pdf": pdf_to_markdown, ".xlsx": xlsx_to_markdown}
+def docx_to_markdown(src: Path) -> str:
+    # Body only: headers, footers, footnotes and text boxes live in other parts
+    # of the package. Headings are told apart by the built-in style names, which
+    # Word stores in English whatever the language of its UI; list items by their
+    # style or, as LibreOffice writes them, by numbering set on the paragraph.
+    blocks = []
+
+    for item in docx.Document(src).iter_inner_content():
+        if isinstance(item, Table):
+            # A merged cell is repeated in every column it spans.
+            rows = [
+                [cell.text.strip().replace("|", "\\|").replace("\n", " ") for cell in row.cells]
+                for row in item.rows
+            ]
+            table = markdown_table(rows)
+            if table:
+                blocks.append("\n".join(table))
+            continue
+
+        text = item.text.strip()
+        if not text:
+            continue
+
+        style = item.style.name if item.style is not None else ""
+        level = style.removeprefix("Heading ")
+        if style == "Title":
+            text = f"# {text}"
+        elif level != style and level.isdigit():
+            text = "#" * min(int(level), 6) + f" {text}"
+        elif style.startswith("List Number"):
+            text = f"1. {text}"
+        # python-docx has no public API for paragraph numbering: read the element.
+        elif style.startswith("List") or item._p.pPr is not None and item._p.pPr.numPr is not None:
+            text = f"- {text}"
+        blocks.append(text)
+
+    return "\n\n".join(blocks)
+
+
+def odt_to_markdown(src: Path) -> str:
+    # odfdo renders headings, lists, tables and emphasis itself. Embedded images
+    # come out as links into the archive (Pictures/...), which do not resolve.
+    return odfdo.Document(src).to_markdown().strip()
+
+
+CONVERTERS = {
+    ".docx": docx_to_markdown,
+    ".odt": odt_to_markdown,
+    ".pdf": pdf_to_markdown,
+    ".xlsx": xlsx_to_markdown,
+}
 
 
 def remove_orphans() -> int:
@@ -141,6 +205,11 @@ def main() -> int:
         ]
 
         for filename in sorted(filenames):
+            # The owner file Word leaves next to an open document: a few bytes
+            # that share its extension but are no DOCX.
+            if filename.startswith("~$"):
+                continue
+
             src = Path(dirpath) / filename
             convert = CONVERTERS.get(src.suffix.lower())
             if convert is None:

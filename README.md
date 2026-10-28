@@ -36,6 +36,8 @@ documents/                         documents/_md/
 | [ocrmypdf](https://github.com/ocrmypdf/OCRmyPDF) + Tesseract | text layer for scanned PDFs, output as PDF/A-2b |
 | `pdftotext -layout` (poppler) | PDF text extraction, keeping labels and values on the same line |
 | [openpyxl](https://openpyxl.readthedocs.io) | XLSX sheets as Markdown tables |
+| [python-docx](https://python-docx.readthedocs.io) | DOCX documents as Markdown |
+| [odfdo](https://github.com/jdum/odfdo) | ODT documents as Markdown |
 | Ghostscript, unpaper | ocrmypdf runtime dependencies |
 
 Tesseract selects its SIMD code path at runtime and falls back to SSE on CPUs
@@ -48,6 +50,8 @@ up installed.
 |---|---|
 | `.pdf` | text layer via `pdftotext -layout`; image-only scans are OCRed first |
 | `.xlsx` | one Markdown table per sheet, with the cached values |
+| `.docx` | body text with headings, lists and tables |
+| `.odt` | headings, lists, tables and emphasis |
 
 Every other file is ignored. Plain text formats (CSV, TXT, JSON, HTML) need no
 conversion: agents read them as they are. More formats are tracked in
@@ -169,6 +173,7 @@ away on its own as soon as the edit and the converter agree again.
 alignment produced by `pdftotext -layout` is meaningful on forms, invoices and
 tax documents, and Markdown would collapse it. XLSX sheets become one table per
 sheet, with the values cached by Excel or LibreOffice rather than the formulas.
+DOCX and ODT documents become plain Markdown: headings, lists and tables.
 
 ## Configuration
 
@@ -195,7 +200,7 @@ check upstream before relying on it.
 
 | Tool | OCR for scans | ML runtime | CPU without AVX2 | Folder sync | Formats |
 |---|---|---|---|---|---|
-| **ConvSync** | yes, Tesseract, local | none | yes | **yes**: incremental, orphans, hand-edit guard | PDF, XLSX |
+| **ConvSync** | yes, Tesseract, local | none | yes | **yes**: incremental, orphans, hand-edit guard | PDF, XLSX, DOCX, ODT |
 | [MarkItDown](https://github.com/microsoft/markitdown) | via plugins or LLM | onnxruntime (`magika`, core dependency) | no, SIGILL | no | many |
 | [Docling](https://github.com/docling-project/docling) | yes | torch / onnxruntime | not guaranteed | no | many |
 | [Marker](https://github.com/datalab-to/marker) | yes | torch | not guaranteed | no | many |
@@ -209,8 +214,7 @@ When to pick something else:
 - **Complex layouts** (multi-column papers, formulas, nested tables) on a
   modern CPU: Docling, Marker or MinerU reconstruct the reading order far
   better than `pdftotext`.
-- **DOCX, PPTX, ODT, EPUB**: Anydoc or MarkItDown. This image does not convert
-  them (yet).
+- **PPTX, EPUB**: Anydoc or MarkItDown. This image does not convert them (yet).
 - **One-off conversions**: any library above; the sync machinery here only pays
   off on a folder that keeps changing.
 
@@ -235,7 +239,13 @@ docker run --rm --network none --entrypoint /opt/convsync/tests/smoke.sh convsyn
 
 ## Limitations
 
-- Only PDF and XLSX are converted; other files are ignored.
+- Only PDF, XLSX, DOCX and ODT are converted; other files are ignored.
+- DOCX: only the body is converted. Headers, footers, footnotes and text boxes
+  are dropped, and so is text formatting. Headings are recognized by the
+  built-in style names only; numbered lists come out as bullet lists unless
+  they use a `List Number` style.
+- Images embedded in an ODT come out as links into the archive
+  (`Pictures/...`), which do not resolve; in a DOCX they are dropped.
 - A PDF that mixes born digital and scanned pages (a typed cover on a scanned
   body) clears the 100-character threshold and is not OCRed: only PDFs scanned
   on every page are caught regardless of their text.
