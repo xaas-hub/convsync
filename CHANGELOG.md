@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/xaas-hub/convsync/compare/v0.1.7...v0.2.0) (2026-10-28)
+
+### Features
+
+* convert DOCX and ODT documents ([d73e7dc](https://github.com/xaas-hub/convsync/commit/d73e7dc290634e1b2569df79cfa98dbd0056332a)), closes [#5](https://github.com/xaas-hub/convsync/issues/5)
+* convert ODS and XLS spreadsheets ([74de910](https://github.com/xaas-hub/convsync/commit/74de910ae7c90ab78e524db0245f59bd65c22c4e)), closes [#5](https://github.com/xaas-hub/convsync/issues/5)
+
 ## [0.1.7](https://github.com/xaas-hub/convsync/compare/v0.1.6...v0.1.7) (2026-10-19)
 
 ### Dependencies
