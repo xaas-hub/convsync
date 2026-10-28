@@ -12,7 +12,7 @@ Thank you for your interest in contributing!
 │   └── convsync                # Entry point: sync | ocr | convert | <command>
 ├── src/
 │   ├── ocr.sh                  # Adds a text layer to scanned PDFs, into _ocr/
-│   └── convert.py              # PDF/XLSX/DOCX/ODT to Markdown, into _md/
+│   └── convert.py              # Documents to Markdown, into _md/
 ├── tests/
 │   └── smoke.sh                # End-to-end check, fixtures generated on the fly
 ├── data/                       # Documents for standalone use (gitignored)

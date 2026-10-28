@@ -138,6 +138,57 @@ PY
 # conversion attempt would fail the run.
 printf 'owner' >"2026/~\$verbale.docx"
 
+# OpenDocument spreadsheet, with the trailing rows LibreOffice writes: one of
+# cells that carry only a style, then empty ones up to the last row Calc allows.
+python3 - <<'PY'
+import odfdo
+
+document = odfdo.Document("spreadsheet")
+document.body.clear()
+table = odfdo.Table("Licenze")
+table.set_values([["Prodotto", "Scadenza"], ["Antivirus", "2027"]])
+table.append(
+    odfdo.Element.from_tag(
+        '<table:table-row><table:table-cell table:style-name="ce1"'
+        ' table:number-columns-repeated="16384"/></table:table-row>'
+    )
+)
+table.append(
+    odfdo.Element.from_tag(
+        '<table:table-row table:number-rows-repeated="1048573"><table:table-cell'
+        ' table:number-columns-repeated="16384"/></table:table-row>'
+    )
+)
+document.body.append(table)
+document.save("2026/licenze.ods")
+PY
+
+# Legacy XLS: nothing in the image writes one, so this is a BIFF2 worksheet
+# assembled record by record (BOF, LABEL, NUMBER, EOF), a format xlrd reads.
+python3 - <<'PY'
+import struct
+
+
+def record(rtype, data=b""):
+    return struct.pack("<HH", rtype, len(data)) + data
+
+
+def label(row, col, text):
+    raw = text.encode("latin-1")
+    return record(0x0004, struct.pack("<HH3sB", row, col, b"", len(raw)) + raw)
+
+
+def number(row, col, value):
+    return record(0x0003, struct.pack("<HH3sd", row, col, b"", value))
+
+
+with open("2026/inventario.xls", "wb") as stream:
+    stream.write(record(0x0009, struct.pack("<HH", 0x0002, 0x0010)))
+    stream.write(label(0, 0, "Bene") + label(0, 1, "Valore"))
+    stream.write(label(1, 0, "Stampante") + number(1, 1, 380))
+    stream.write(record(0x000A))
+PY
+
 convsync
 
 grep -q "Fattura numero 4417" _md/2026/native.pdf.md || fail "native PDF not extracted"
@@ -147,6 +198,10 @@ grep -q "Fattura numero 4417" _md/2026/native.pdf.md || fail "native PDF not ext
 grep -q "4417" _md/2026/scan.pdf.md || fail "OCR text missing from the scan"
 grep -q "(ocr)" _md/2026/scan.pdf.md || fail "OCR provenance missing from the stamp"
 grep -q "| Notebook | 1200 |" _md/2026/cespiti.xlsx.md || fail "XLSX table missing"
+# Exact line: with the styled trailing cells kept, the table is 16384 columns wide.
+grep -qx "| Antivirus | 2027 |" _md/2026/licenze.ods.md || fail "ODS table missing"
+# 380, not 380.0: BIFF stores every number as a float.
+grep -qx "| Stampante | 380 |" _md/2026/inventario.xls.md || fail "XLS table missing"
 grep -qx "# Verbale riunione 7342" _md/2026/verbale.docx.md || fail "DOCX heading missing"
 grep -qx -- "- Rinnovo del dominio" _md/2026/verbale.docx.md || fail "DOCX list missing"
 grep -qx "| Dominio | 15 |" _md/2026/verbale.docx.md || fail "DOCX table missing"
@@ -166,7 +221,7 @@ pdffonts _ocr/2026/form.ocr.pdf | awk 'NR > 2' | grep -Eqv 'GlyphLessFont|Occult
 grep -q "5190" _md/2026/poster.pdf.md || fail "OCR text missing from the low-contrast poster"
 
 # Second run: nothing to do.
-convsync | grep -q "converted: 0 | skipped: 7" || fail "rebuild was not incremental"
+convsync | grep -q "converted: 0 | skipped: 9" || fail "rebuild was not incremental"
 
 # A hand edit survives the next forced rebuild as a .new conflict file.
 echo "hand edit" >>_md/2026/native.pdf.md

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Convert files that LLM tooling cannot read as they are (PDF, XLSX, DOCX, ODT) into
-Markdown under _md/.
+Convert files that LLM tooling cannot read as they are (PDF, XLSX, XLS, ODS, DOCX,
+ODT) into Markdown under _md/.
 
 markitdown is not used here: its core dependency `magika` pulls in `onnxruntime`,
 whose prebuilt wheels are compiled with AVX2 and abort with SIGILL on CPUs without
-it. pdftotext (poppler), openpyxl, python-docx and odfdo need no such runtime.
+it. pdftotext (poppler), openpyxl, xlrd, python-docx and odfdo need no such
+runtime.
 
 The tree to convert is $CONVSYNC_ROOT (default /data, the volume of the image).
 
@@ -21,6 +22,7 @@ from pathlib import Path
 
 import docx
 import odfdo
+import xlrd
 from docx.table import Table
 from openpyxl import load_workbook
 
@@ -89,27 +91,72 @@ def markdown_table(rows: list[list[str]]) -> list[str]:
     ]
 
 
-def xlsx_to_markdown(src: Path) -> str:
-    # data_only=True returns the values cached by Excel/LibreOffice, not formulas.
-    workbook = load_workbook(src, data_only=True, read_only=True)
+def sheets_to_markdown(sheets) -> str:
+    """A "## <name>" section with a table per non-empty sheet, from (name, rows) pairs."""
     chunks = []
 
-    for sheet in workbook.worksheets:
+    for name, values in sheets:
         rows = [
             ["" if cell is None else str(cell).strip().replace("|", "\\|") for cell in row]
-            for row in sheet.iter_rows(values_only=True)
+            for row in values
         ]
         table = markdown_table(rows)
         if not table:
             continue
 
-        chunks.append(f"## {sheet.title}")
+        chunks.append(f"## {name}")
         chunks.append("")
         chunks.extend(table)
         chunks.append("")
 
-    workbook.close()
     return "\n".join(chunks).strip()
+
+
+def xlsx_to_markdown(src: Path) -> str:
+    # data_only=True returns the values cached by Excel/LibreOffice, not formulas.
+    workbook = load_workbook(src, data_only=True, read_only=True)
+    text = sheets_to_markdown(
+        (sheet.title, sheet.iter_rows(values_only=True)) for sheet in workbook.worksheets
+    )
+    workbook.close()
+    return text
+
+
+def xls_value(cell: xlrd.sheet.Cell, datemode: int):
+    """The value of a legacy XLS cell as openpyxl would return it for an XLSX."""
+    # BIFF stores every number, dates included, as a float.
+    if cell.ctype == xlrd.XL_CELL_DATE:
+        return xlrd.xldate.xldate_as_datetime(cell.value, datemode)
+    if cell.ctype == xlrd.XL_CELL_NUMBER and cell.value.is_integer():
+        return int(cell.value)
+    if cell.ctype == xlrd.XL_CELL_BOOLEAN:
+        return bool(cell.value)
+    if cell.ctype == xlrd.XL_CELL_ERROR:
+        return xlrd.error_text_from_code.get(cell.value)
+    return cell.value
+
+
+def xls_to_markdown(src: Path) -> str:
+    # Formula cells hold the result cached by the application that saved the file.
+    # xlrd prints its warnings on its logfile: keep them off the summary on stdout.
+    sheets = []
+    with xlrd.open_workbook(src, logfile=sys.stderr) as workbook:
+        for sheet in workbook.sheets():
+            rows = [[xls_value(c, workbook.datemode) for c in row] for row in sheet.get_rows()]
+            sheets.append((sheet.name, rows))
+    return sheets_to_markdown(sheets)
+
+
+def ods_to_markdown(src: Path) -> str:
+    sheets = []
+    for table in odfdo.Document(src).body.get_tables():
+        # LibreOffice declares every sheet as large as Calc allows, through
+        # repeated rows and columns of cells that carry only a style: expanded,
+        # that is billions of cells. aggressive=True drops the styled ones too.
+        table.rstrip(aggressive=True)
+        # The values cached by the application, not the formulas.
+        sheets.append((table.name, table.get_values()))
+    return sheets_to_markdown(sheets)
 
 
 def docx_to_markdown(src: Path) -> str:
@@ -159,8 +206,10 @@ def odt_to_markdown(src: Path) -> str:
 
 CONVERTERS = {
     ".docx": docx_to_markdown,
+    ".ods": ods_to_markdown,
     ".odt": odt_to_markdown,
     ".pdf": pdf_to_markdown,
+    ".xls": xls_to_markdown,
     ".xlsx": xlsx_to_markdown,
 }
 
