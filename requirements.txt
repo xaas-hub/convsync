@@ -1,7 +1,9 @@
 # Python dependencies of the image. System packages are in the Dockerfile.
 #
-# Neither pulls numpy, onnxruntime or torch, so the AVX2 problem documented in
+# None of them pulls numpy, onnxruntime or torch, so the AVX2 problem documented in
 # src/convert.py does not come back: tests/smoke.sh asserts it on every build.
 
 ocrmypdf==17.13.0
+odfdo==3.27.3
 openpyxl==3.1.5
+python-docx==1.2.0

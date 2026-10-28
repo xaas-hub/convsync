@@ -112,6 +112,32 @@ sheet.append(["Notebook", 1200])
 workbook.save("2026/cespiti.xlsx")
 PY
 
+# Word processor documents: a heading, a list and a table each.
+python3 - <<'PY'
+import docx
+import odfdo
+
+document = docx.Document()
+document.add_heading("Verbale riunione 7342", 1)
+document.add_paragraph("Rinnovo del dominio", style="List Bullet")
+table = document.add_table(rows=2, cols=2)
+table.cell(0, 0).text, table.cell(0, 1).text = "Voce", "Importo"
+table.cell(1, 0).text, table.cell(1, 1).text = "Dominio", "15"
+document.save("2026/verbale.docx")
+
+document = odfdo.Document("text")
+document.body.clear()
+document.body.append(odfdo.Header(1, "Contratto di servizio 6031"))
+document.body.append(odfdo.List(["Assistenza annuale"]))
+table = odfdo.Table("Prezzi", width=2, height=2)
+table.set_values([["Voce", "Importo"], ["Hosting", "300"]])
+document.body.append(table)
+document.save("2026/contratto.odt")
+PY
+# The owner file Word keeps next to an open document: not a DOCX, and a
+# conversion attempt would fail the run.
+printf 'owner' >"2026/~\$verbale.docx"
+
 convsync
 
 grep -q "Fattura numero 4417" _md/2026/native.pdf.md || fail "native PDF not extracted"
@@ -121,6 +147,14 @@ grep -q "Fattura numero 4417" _md/2026/native.pdf.md || fail "native PDF not ext
 grep -q "4417" _md/2026/scan.pdf.md || fail "OCR text missing from the scan"
 grep -q "(ocr)" _md/2026/scan.pdf.md || fail "OCR provenance missing from the stamp"
 grep -q "| Notebook | 1200 |" _md/2026/cespiti.xlsx.md || fail "XLSX table missing"
+grep -qx "# Verbale riunione 7342" _md/2026/verbale.docx.md || fail "DOCX heading missing"
+grep -qx -- "- Rinnovo del dominio" _md/2026/verbale.docx.md || fail "DOCX list missing"
+grep -qx "| Dominio | 15 |" _md/2026/verbale.docx.md || fail "DOCX table missing"
+[ ! -e "_md/2026/~\$verbale.docx.md" ] || fail "Word owner file converted"
+grep -qx "# Contratto di servizio 6031" _md/2026/contratto.odt.md || fail "ODT heading missing"
+grep -q "Assistenza annuale" _md/2026/contratto.odt.md || fail "ODT list missing"
+# odfdo pads every cell to the width of its column.
+grep -Eqx '\| Hosting +\| 300 +\|' _md/2026/contratto.odt.md || fail "ODT table missing"
 [ -f _ocr/2026/form.ocr.pdf ] || fail "flattened form not OCRed"
 # 8823 is only in the raster: the fields alone would not produce it.
 grep -q "8823" _md/2026/form.pdf.md || fail "OCR text missing from the flattened form"
@@ -132,7 +166,7 @@ pdffonts _ocr/2026/form.ocr.pdf | awk 'NR > 2' | grep -Eqv 'GlyphLessFont|Occult
 grep -q "5190" _md/2026/poster.pdf.md || fail "OCR text missing from the low-contrast poster"
 
 # Second run: nothing to do.
-convsync | grep -q "converted: 0 | skipped: 5" || fail "rebuild was not incremental"
+convsync | grep -q "converted: 0 | skipped: 7" || fail "rebuild was not incremental"
 
 # A hand edit survives the next forced rebuild as a .new conflict file.
 echo "hand edit" >>_md/2026/native.pdf.md

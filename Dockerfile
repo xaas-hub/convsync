@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# Mirrors a tree of PDF and XLSX documents into Markdown, OCRing the scanned
-# PDFs locally, for LLM agents and RAG tooling to read.
+# Mirrors a tree of PDF, XLSX, DOCX and ODT documents into Markdown, OCRing the
+# scanned PDFs locally, for LLM agents and RAG tooling to read.
 #
 # The image deliberately carries NO machine learning runtime (numpy, onnxruntime,
 # torch): that is what keeps it free of the AVX2 requirement that makes
