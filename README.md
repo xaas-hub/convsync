@@ -58,6 +58,30 @@ Every other file is ignored. Plain text formats (CSV, TXT, JSON, HTML) need no
 conversion: agents read them as they are. More formats are tracked in
 [#5](https://github.com/xaas-hub/convsync/issues/5).
 
+### Legacy `.doc` files
+
+Word 97–2003 `.doc` files are a binary format (OLE2), not a renamed `.docx`:
+renaming them only makes the conversion fail. Convert them to `.docx` first,
+for example with LibreOffice in a throwaway container, run from the folder
+that contains `documents/`:
+
+```bash
+docker run --rm -v "$PWD/documents:/w" -w /w debian:bookworm-slim sh -c '
+  apt-get update -qq &&
+  apt-get install -y -qq --no-install-recommends libreoffice-writer-nogui >/dev/null &&
+  owner="$(stat -c %u:%g .)" &&
+  find . \( -path ./_md -o -path ./_ocr \) -prune -o \
+    -type f -iname "*.doc" ! -name "~\$*" -print |
+  while IFS= read -r f; do
+    HOME=/tmp soffice --headless --convert-to docx --outdir "$(dirname "$f")" "$f" &&
+      chown "$owner" "${f%.*}.docx"
+  done'
+```
+
+Each `.docx` lands next to its original, overwriting any `.docx` of the same
+name; the `.doc` files stay and are ignored. Some `.doc` files exported by
+older software are actually RTF or HTML: `file name.doc` tells which.
+
 ## Available tags
 
 | Tag | Content |
