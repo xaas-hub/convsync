@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/xaas-hub/convsync/compare/v0.2.2...v0.3.0) (2026-11-16)
+
+### Features
+
+* keep PDF annotations as a Comments section ([4ac86e9](https://github.com/xaas-hub/convsync/commit/4ac86e9b50fe04d5f81103464d1b5413d63b8b63))
+
+### Documentation
+
+* **readme:** document PDF comments and their limits ([6f5c724](https://github.com/xaas-hub/convsync/commit/6f5c724ade3030e76cf8759e9fde19d632783648))
+
 ## [0.2.2](https://github.com/xaas-hub/convsync/compare/v0.2.1...v0.2.2) (2026-11-16)
 
 ### Documentation
