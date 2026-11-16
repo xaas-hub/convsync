@@ -35,6 +35,7 @@ documents/                         documents/_md/
 | `convsync` | entry point: `sync`, `ocr`, `convert` |
 | [ocrmypdf](https://github.com/ocrmypdf/OCRmyPDF) + Tesseract | text layer for scanned PDFs, output as PDF/A-2b |
 | `pdftotext -layout` (poppler) | PDF text extraction, keeping labels and values on the same line |
+| [pikepdf](https://github.com/pikepdf/pikepdf) | PDF comments (annotations), which `pdftotext` does not read |
 | [openpyxl](https://openpyxl.readthedocs.io) | XLSX sheets as Markdown tables |
 | [xlrd](https://xlrd.readthedocs.io) | XLS sheets as Markdown tables |
 | [python-docx](https://python-docx.readthedocs.io) | DOCX documents as Markdown |
@@ -49,7 +50,7 @@ up installed.
 
 | Extension | Conversion |
 |---|---|
-| `.pdf` | text layer via `pdftotext -layout`; image-only scans are OCRed first |
+| `.pdf` | text layer via `pdftotext -layout`, plus comments; image-only scans are OCRed first |
 | `.xlsx`, `.xls`, `.ods` | one Markdown table per sheet, with the cached values |
 | `.docx` | body text with headings, lists and tables |
 | `.odt` | headings, lists, tables and emphasis |
@@ -196,7 +197,10 @@ away on its own as soon as the edit and the converter agree again.
 
 **Output shape.** PDF text is wrapped in a fenced code block, because the
 alignment produced by `pdftotext -layout` is meaningful on forms, invoices and
-tax documents, and Markdown would collapse it. XLSX, XLS and ODS sheets become
+tax documents, and Markdown would collapse it. Comments (sticky notes,
+highlights and other annotations with text) follow in a `## Comments` section,
+each with its page, the text it refers to, its author and whether it is a
+reply. XLSX, XLS and ODS sheets become
 one table per sheet, with the values cached by Excel or LibreOffice rather than
 the formulas.
 DOCX and ODT documents become plain Markdown: headings, lists and tables.
@@ -276,6 +280,11 @@ docker run --rm --network none --entrypoint /opt/convsync/tests/smoke.sh convsyn
 - A PDF that mixes born digital and scanned pages (a typed cover on a scanned
   body) clears the 100-character threshold and is not OCRed: only PDFs scanned
   on every page are caught regardless of their text.
+- PDF comments are listed after the text, not inline. A sticky note is matched
+  to the line at the height of its icon: it may pick up two lines, or none when
+  the icon sits in a margin. Pages rotated through `/Rotate` get wrong
+  matches. A scanned PDF with comments but no OCR copy yet no longer reports
+  `EMPTY`.
 - XLSX formulas never computed by a spreadsheet application (files written by
   scripts) have no cached value and come out empty.
 - OCR quality is Tesseract's: fine on clean scans, poor on photos and

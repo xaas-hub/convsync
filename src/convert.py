@@ -108,6 +108,7 @@ def pdf_comments(src: Path, text_src: Path) -> str:
                     x0, x1 = left, right
                 # PDF coordinates grow upwards from the bottom-left corner,
                 # pdftotext crops from the top-left corner of the crop box.
+                # /Rotate is not applied: on rotated pages the region is wrong.
                 anchor = pdf_region_text(text_src, number, x0 - left, top - y1, x1 - x0, y1 - y0)
 
                 head = f"p. {number}"
