@@ -6,5 +6,6 @@
 ocrmypdf==17.14.1
 odfdo==3.27.3
 openpyxl==3.1.5
+pikepdf==10.18.2
 python-docx==1.2.0
 xlrd==2.0.2

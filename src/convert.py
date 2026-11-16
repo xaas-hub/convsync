@@ -5,8 +5,8 @@ ODT) into Markdown under _md/.
 
 markitdown is not used here: its core dependency `magika` pulls in `onnxruntime`,
 whose prebuilt wheels are compiled with AVX2 and abort with SIGILL on CPUs without
-it. pdftotext (poppler), openpyxl, xlrd, python-docx and odfdo need no such
-runtime.
+it. pdftotext (poppler), pikepdf, openpyxl, xlrd, python-docx and odfdo need no
+such runtime.
 
 The tree to convert is $CONVSYNC_ROOT (default /data, the volume of the image).
 
@@ -22,6 +22,7 @@ from pathlib import Path
 
 import docx
 import odfdo
+import pikepdf
 import xlrd
 from docx.table import Table
 from openpyxl import load_workbook
@@ -35,6 +36,10 @@ EXCLUDED_DIRS = {"_md", "_ocr"}
 # covers the body only, so a hand edit can be told apart from a stale rebuild.
 MARKER = "<!-- generated from {source} sha256:{digest} -->"
 MARKER_RE = re.compile(r"^<!-- generated from .* sha256:([0-9a-f]{64}) -->\n")
+
+# Annotations that carry no comment: hyperlinks, form fields, and the popup
+# windows that only display the note of their parent.
+NOT_COMMENTS = {"/Link", "/Widget", "/Popup"}
 
 
 def digest_of(body: str) -> str:
@@ -58,21 +63,90 @@ def ocr_variant(src: Path) -> Path | None:
     return candidate if candidate.is_file() else None
 
 
+def pdf_region_text(src: Path, page: int, x: float, y: float, width: float, height: float) -> str:
+    """The text inside a region of a page, in pdftotext units: points from the top-left corner."""
+    result = subprocess.run(
+        [
+            "pdftotext", "-enc", "UTF-8", "-f", str(page), "-l", str(page),
+            "-x", str(int(x)), "-y", str(int(y)),
+            "-W", str(int(width) + 1), "-H", str(int(height) + 1),
+            str(src), "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return " ".join(result.stdout.split())
+
+
+def pdf_comments(src: Path, text_src: Path) -> str:
+    """A Markdown list of the comments (sticky notes, highlights...) of a PDF.
+
+    pdftotext reads the page content only, annotations are a separate layer.
+    Each comment is anchored to the text it marks (highlight, underline,
+    strikeout) or, for a sticky note, to the line at the height of its icon.
+    """
+    items = []
+    with pikepdf.open(src) as pdf:
+        for number, page in enumerate(pdf.pages, start=1):
+            left, bottom, right, top = (float(v) for v in page.cropbox)
+            notes = []
+            for annot in page.obj.get("/Annots", []):
+                if str(annot.get("/Subtype")) in NOT_COMMENTS:
+                    continue
+                lines = str(annot.get("/Contents", "")).strip().splitlines()
+                if not lines:
+                    continue
+
+                if "/QuadPoints" in annot:
+                    quad = [float(v) for v in annot.QuadPoints]
+                    x0, x1 = min(quad[0::2]), max(quad[0::2])
+                    y0, y1 = min(quad[1::2]), max(quad[1::2])
+                else:
+                    _, y0, _, y1 = (float(v) for v in annot.Rect)
+                    y0, y1 = min(y0, y1), max(y0, y1)
+                    x0, x1 = left, right
+                # PDF coordinates grow upwards from the bottom-left corner,
+                # pdftotext crops from the top-left corner of the crop box.
+                anchor = pdf_region_text(text_src, number, x0 - left, top - y1, x1 - x0, y1 - y0)
+
+                head = f"p. {number}"
+                if anchor:
+                    head += f", «{anchor}»"
+                author = str(annot.get("/T", "")).strip()
+                if author:
+                    head += f" ({author})"
+                if "/IRT" in annot:
+                    head += " [reply]"
+                body = "\n".join(f"  {line}".rstrip() for line in lines)
+                notes.append((-y1, f"- {head}:\n{body}"))
+
+            # /Annots is in creation order: list the comments top to bottom.
+            items.extend(item for _, item in sorted(notes, key=lambda note: note[0]))
+
+    return "\n".join(items)
+
+
 def pdf_to_markdown(src: Path) -> str:
     # An image-only scan carries no text layer: read the OCR copy instead, so
     # the result lands at the same path as any other document.
-    src = ocr_variant(src) or src
+    text_src = ocr_variant(src) or src
     # pdftotext -layout keeps labels and values on the same visual line;
     # pdfminer groups text boxes by column and breaks form-like PDFs.
     result = subprocess.run(
-        ["pdftotext", "-layout", "-enc", "UTF-8", "-nopgbrk", str(src), "-"],
+        ["pdftotext", "-layout", "-enc", "UTF-8", "-nopgbrk", str(text_src), "-"],
         capture_output=True,
         text=True,
         check=True,
     )
     text = result.stdout.strip()
     # Fenced block: the alignment is significant, don't let Markdown collapse it.
-    return f"```\n{text}\n```" if text else ""
+    chunks = [f"```\n{text}\n```"] if text else []
+    # Annotations are read from the original: the OCR copy may not keep them.
+    comments = pdf_comments(src, text_src)
+    if comments:
+        chunks.append(f"## Comments\n\n{comments}")
+    return "\n\n".join(chunks)
 
 
 def markdown_table(rows: list[list[str]]) -> list[str]:
