@@ -3,7 +3,7 @@
 # None of them pulls numpy, onnxruntime or torch, so the AVX2 problem documented in
 # src/convert.py does not come back: tests/smoke.sh asserts it on every build.
 
-ocrmypdf==17.14.1
+ocrmypdf==17.14.2
 odfdo==3.27.3
 openpyxl==3.1.5
 pikepdf==10.18.2
